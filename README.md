@@ -1,5 +1,3 @@
-Markdown
-
 # Custom Caddy Docker Image (Bunny DNS + DDNS + CrowdSec)
 
 This repository provides an automated build for a custom Caddy Docker image, optimized for usage in standard Docker environments and as a drop-in replacement on Unraid. The build process runs weekly via GitHub Actions and publishes the image to the GitHub Container Registry (GHCR).
@@ -19,24 +17,19 @@ The `Caddyfile` must be created manually on the host system before starting the 
 mkdir -p /path/to/caddy/config
 mkdir -p /path/to/caddy/data
 touch /path/to/caddy/Caddyfile
+```
 
-2. Deployment
+### 2. Deployment
 
-Option A: Unraid
+**Option A: Unraid**
+1. Add a new container using the repository path: `ghcr.io/<YOUR_GITHUB_USERNAME>/caddy-bunny-ddns-crowdsec:latest` *(username must be lowercase)*.
+2. Set the Network to a Custom Network (e.g., `br0`) with a dedicated IP, or change Unraid's default management ports (80/443) to avoid conflicts if using the `bridge` network.
+3. Add Path mappings for `/data`, `/config`, and `/etc/caddy/Caddyfile`.
+4. Add Variable mappings for `BUNNY_API_TOKEN` and `CROWDSEC_API_KEY`.
+5. Install the Unraid plugin **CA Auto Update Applications** and enable it for this container to automatically receive the weekly GitHub builds.
 
-    Add a new container using the repository path: ghcr.io/<YOUR_GITHUB_USERNAME>/caddy-bunny-ddns-crowdsec:latest (username must be lowercase).
-
-    Set the Network to a Custom Network (e.g., br0) with a dedicated IP, or change Unraid's default management ports (80/443) to avoid conflicts if using the bridge network.
-
-    Add Path mappings for /data, /config, and /etc/caddy/Caddyfile.
-
-    Add Variable mappings for BUNNY_API_TOKEN and CROWDSEC_API_KEY.
-
-    Install the Unraid plugin CA Auto Update Applications and enable it for this container to automatically receive the weekly GitHub builds.
-
-Option B: Docker Compose
-YAML
-
+**Option B: Docker Compose**
+```yaml
 services:
   caddy:
     image: ghcr.io/<YOUR_GITHUB_USERNAME>/caddy-bunny-ddns-crowdsec:latest
@@ -52,12 +45,12 @@ services:
       - /path/to/caddy/Caddyfile:/etc/caddy/Caddyfile
       - /path/to/caddy/data:/data
       - /path/to/caddy/config:/config
+```
 
-3. Secure Caddyfile Configuration
+### 3. Secure Caddyfile Configuration
+Use environment variables `{$VARIABLE}` instead of hardcoding sensitive keys directly into the file.
 
-Use environment variables {$VARIABLE} instead of hardcoding sensitive keys directly into the file.
-Code-Snippet
-
+```caddyfile
 {
     servers {
         trusted_proxies bunnynet {
@@ -86,14 +79,14 @@ yourdomain.com {
     crowdsec
     reverse_proxy <TARGET_IP>:<TARGET_PORT>
 }
+```
+*Note: If Caddy fails to start with `trusted_proxies bunnynet` in the global `servers` block, the module syntax may require it to be placed directly inside the `reverse_proxy` block of your site.*
 
-Note: If Caddy fails to start with trusted_proxies bunnynet in the global servers block, the module syntax may require it to be placed directly inside the reverse_proxy block of your site.
-Automated Updates
+## Automated Updates
+GitHub Actions rebuilds the image entirely from scratch (`no-cache: true`) every Sunday at 03:00 UTC to pull the latest module versions. 
 
-GitHub Actions rebuilds the image entirely from scratch (no-cache: true) every Sunday at 03:00 UTC to pull the latest module versions.
-AI Disclosure
-
+## AI Disclosure
 The code, configuration files, and documentation in this repository were generated with the assistance of an AI language model. All generated components have been logically verified based on official documentation for Caddy, Unraid, and the respective plugins.
-License
 
-This project is licensed under the Apache License 2.0.
+## License
+This project is licensed under the [Apache License 2.0](LICENSE).
